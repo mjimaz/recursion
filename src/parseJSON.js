@@ -94,15 +94,30 @@ function parseRecursion(json, charIndex, operators, obj, key, value){
   			}
   			
   			//search for beginning of value
-  			while(json.charAt(++charIndex) !== '"'){
+  			while(json.charAt(++charIndex) === ' '){
+  				console.log("*")
   				//return undefined;
   			}
 
-  			while(json.charAt(++charIndex) !== '"'){
-  				value += json.charAt(charIndex);
+  			jsonChar = json.charAt(charIndex);
+
+  			if(jsonChar === '"'){
+
+  				while(json.charAt(++charIndex) !== '"'){
+  					value += json.charAt(charIndex);
+  				}
+  			}else if(jsonChar === 'f'){
+  				value = false;
+  				charIndex += 4;
+  			}else if(jsonChar === 't'){
+  				value = true;
+  				charIndex += 3;
+  			}else if(jsonChar === 'n'){
+  				value = null;
+  				charIndex += 3;
   			}
 
-  			//console.log("object = "+key+":"+value);
+  			console.log("object = "+key+":"+value);
 
   			obj[key] = value;
 
