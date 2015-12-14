@@ -11,9 +11,10 @@ var parseJSON = function(json) {
   // your code goes here
 
   //remove white space not within double quotes
-  //json = json.replace(/("[^"]*")|\s/g, "$1");
+  json = json.replace(/("[^"]*")|\s/g, "$1");
 
-  //console.log('input:'+json);
+  console.log('input:'+json);
+  
   //first character in json string determines the type of return value
   //var char0 = json.charAt(0);
   var obj;
@@ -21,160 +22,199 @@ var parseJSON = function(json) {
 
   var result = parseRecursion(json, 0, operators, obj);
 
-  //console.log('result:'+result);
+  console.log('result:'+result);
+
+  if(Array.isArray(result)){
+
+  }else{
+
+    for(var key in result){
+      console.log(key+":"+result[key]);
+    }
+  }
   return result;
 
 };
 
 
-function parseRecursion(json, charIndex, operators, obj, key, value){
+function parseRecursion(json, charIndex, operators, obj, values){
 
-	//console.log(json+":"+charIndex);
+	
 
 	var jsonChar = json.charAt(charIndex);
 
-	switch(jsonChar){
-	case '[':
+	//console.log("json char:"+jsonChar);
+  switch(jsonChar){
+
+	 case '[':
   		//console.log('array');
   		obj = [];
   		operators.push(jsonChar);
+  
+      return parseRecursion(json, ++charIndex, operators, obj);
+
   		break;
+  
   	case '{':
   		//console.log('object');
   		obj = {};
   		operators.push(jsonChar);
-  		break;
-  	case ']':
+
+      return parseRecursion(json, ++charIndex, operators, obj);
+  		
+      break;
+  	
+    case ']':
+ 
   		if(operators.pop() === '['){
-  			//console.log('obj='+obj);
-  			return obj;
-  		}else{
+        //check if there are items to push into the obj array
+        if(values !== undefined){
+          //console.log('closing ] values does not equal to undefined');
+          obj.push(values[0]);
+        }
+  		  
+      	return obj;
+  		
+      }else{
   			//error, improper array
   			//console.log('improper array');
   			return undefined;
   		}
   		break;
-  	case '}':
+  	
+    case '}':
   		if(operators.pop() === '{'){
+         //check if there are items to push into the obj array
+        if(values !== undefined){
+          obj[values[0]] = values[1];
+        }
   			return obj;
   		}else{
   			//error, improper object
   			return undefined;
   		}
   		break;
+
   	case '"':
-  		console.log('string');
-  		//check type of object
-  		if(Array.isArray(obj)){ //expect to push items
-  			var item = "";
 
-  			//beginning of item
-  			while(json.charAt(++charIndex) !== '"'){
-  				item += json.charAt(charIndex);
-  			}
+      var tempString = "";
+      //search for the closing " starting from index charIndex
 
-  			obj.push(item);
-  			if(obj.length > 1){
-  				if(operators.pop() !== ','){
-  					return undefined;
-  				}
-  			}
+      var closingQuotesIndex = json.indexOf('"', charIndex+1);
 
-  		}else if(typeof(obj) === 'object'){ //expect key and value
-  			var key = "";
-  			var value = "";
 
-  			//beginning of key
-  			while(json.charAt(++charIndex) !== '"'){
-  				key += json.charAt(charIndex);
-  			}
-  			//check if it is value
-  			if(json.charAt(++charIndex) !== ':'){
-  				return undefined;
-  			}
-  			
-  			//search for beginning of value
-  			while(json.charAt(++charIndex) === ' '){
-  				console.log("*")
-  				//return undefined;
-  			}
+      if(closingQuotesIndex === -1){
+        //error in string format
+        return undefined;
+      }else{
+        
+        tempString = json.substring(charIndex+1, closingQuotesIndex);
+        
+      }
+  		
+      //need to check if key/item or value
+      if(values !== undefined){
+        //object element
+        values.push(tempString);
+      } else{
+        //array element || object element
+        var values = [tempString];
+      }    
 
-  			jsonChar = json.charAt(charIndex);
+      //console.log('tempString:'+tempString);
+      //console.log('values0'+values[0]);
+      //console.log('values1'+values[1]);
 
-  			if(jsonChar === '"'){
+      return parseRecursion(json, closingQuotesIndex+1, operators, obj, values);
 
-  				while(json.charAt(++charIndex) !== '"'){
-  					value += json.charAt(charIndex);
-  				}
-  			}else if(jsonChar === 'f'){
-  				value = false;
-  				charIndex += 4;
-  			}else if(jsonChar === 't'){
-  				value = true;
-  				charIndex += 3;
-  			}else if(jsonChar === 'n'){
-  				value = null;
-  				charIndex += 3;
-  			}
-
-  			console.log("object = "+key+":"+value);
-
-  			obj[key] = value;
-
-  			//pop a comma in operators array if there is one, maybe check the array or object number of elements???
-
-  			var numOfItems =Object.keys(obj).length;
-  			if(numOfItems > 1){
-  				if(operators.pop() !== ','){
-  					return undefined;
-  				}
-  			}
-  		}
   		break;
+
   	case ",": //other items in array or object
-  		operators.push(jsonChar);
+
+      //save values in object
+      if(Array.isArray(obj)){
+        obj.push(values[0]);
+      }else{
+        obj[values[0]] = values[1];
+      }
+
+  		//operators.push(jsonChar);
+
+      //console.log(',:'+obj);
+
+      return parseRecursion(json, ++charIndex, operators, obj);
+
   		break;
 
   	case "f": //false
-  		var item = json.substring(charIndex,charIndex+5); 
-  		charIndex += 4;
-  		obj.push(false);
-  		if(obj.length > 1){
-  				if(operators.pop() !== ','){
-  					return undefined;
-  				}
-  			}
-
+      
+      //need to check if key/item or value
+      if(values !== undefined){
+        //object element
+        values.push(false);
+      } else{
+        //array element || object element
+        var values = [false];
+      }    
+      return parseRecursion(json, charIndex+5, operators, obj, values);
   		break;
-  	case "n": //null
-  		var item = json.substring(charIndex,charIndex+4); 
-  		charIndex += 3;
-  		obj.push(null);
-  		if(obj.length > 1){
-  				if(operators.pop() !== ','){
-  					return undefined;
-  				}
-  			}
+  	
+    case "n": //null
+  		
+      //need to check if key/item or value
+      if(values !== undefined){
+        //object element
+        values.push(null);
+      } else{
+        //array element || object element
+        var values = [null];
+      } 
+      return parseRecursion(json, charIndex+4, operators, obj, values);
 
   		break;
   	case "t": //true
-  		//read the next 3 characrers	
-  		var item = json.substring(charIndex,charIndex+4); 
-  		charIndex += 3;
-  		obj.push(true)
-
-  		if(obj.length > 1){
-  				if(operators.pop() !== ','){
-  					return undefined;
-  				}
-  			}
+  		
+      //need to check if key/item or value
+      if(values !== undefined){
+        //object element
+        values.push(true);
+      } else{
+        //array element || object element
+        var values = [true];
+      } 
+      return parseRecursion(json, charIndex+4, operators, obj, values);
 
   		break;
+
+    case ":":
+      return parseRecursion(json, ++charIndex, operators, obj, values); 
+    break;
   	
-  	default:
-  		console.log('default case:'+jsonChar);
+  	default: //number
+  		//console.log('default case:'+jsonChar);
+      var commaIndex = json.indexOf(',', charIndex+1);
+
+      if(commaIndex === -1){//end of string
+        commaIndex = json.indexOf(']', charIndex+1);
+      }
+
+      //console.log('commaIndex:'+commaIndex);
+      console.log('number:'+json.substring(charIndex, commaIndex));
+      var number = Number(json.substring(charIndex, commaIndex));
+
+      //need to check if key/item or value
+      if(values !== undefined){
+        //object element
+        values.push(number);
+      } else{
+        //array element || object element
+        var values = [number];
+      } 
+      return parseRecursion(json, commaIndex, operators, obj, values); 
 
   }
+
+  /*
 
   if(++charIndex < json.length){
   	//console.log('calling:'+json.charAt(charIndex));
@@ -182,6 +222,7 @@ function parseRecursion(json, charIndex, operators, obj, key, value){
   }
  
   	return obj;
+    */
 }
 
 function addItem(obj, item, key){

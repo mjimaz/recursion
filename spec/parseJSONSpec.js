@@ -15,7 +15,16 @@ describe('parseJSON', function(){
       var equality = _.isEqual(result, expected); // why can't we use `===` here?
       
 
-      //console.log("-- result:"+result+" -- expected:"+expected+" --- equality:"+equality); 
+      console.log("-- result:"+result+" -- expected:"+expected+" --- equality:"+equality); 
+
+      if(Array.isArray(expected)){
+
+  }else{
+
+    for(var key in expected){
+      console.log(key+":"+expected[key]);
+    }
+  }
 
       expect(equality).to.equal(true);
     });
